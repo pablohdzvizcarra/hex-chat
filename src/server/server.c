@@ -8,12 +8,19 @@
 
 #define PORT 8080
 #define BACKLOG 5
+#define BUFFER_SIZE 1024
 
 int main() {
-    int server_fd, client_fd;
+    // This variable holdes the server connection
+    int server_fd;
+    // This variable represents the open client connection in the client --> this server
+    int client_fd;
+
     struct sockaddr_in address;
     int addrlen = sizeof(address);
+    char buffer[BUFFER_SIZE];
     char *hello = "Hello from server";
+    ssize_t bytes_read;
 
     // Create a socket connection with IPv4 addressing and TCP protocol
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -57,6 +64,22 @@ int main() {
         perror("send failed");
     } else {
         printf("Greeting message sent.\n");
+    }
+
+    while (1) {
+        // clear the buffer before each read.
+        memset(buffer, 0, BUFFER_SIZE);
+        bytes_read = recv(client_fd, buffer, BUFFER_SIZE - 1, 0);
+        if (bytes_read < 0) {
+            perror("recv failed");
+            break;
+        } else if (bytes_read == 0) {
+            printf("Client disconnected.\n");
+            break;
+        } else {
+            buffer[bytes_read] = '\0';
+            printf("Received (%zd bytes): %s\n", bytes_read, buffer);
+        }
     }
 
     close(client_fd);
