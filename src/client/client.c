@@ -6,11 +6,12 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <time.h>
+#include "../common/protocol.h"
 
 #define PORT 8080
 #define SERVER_IP "127.0.0.1"
 
-// Helper function to convert a 64-bit intger to network byte order.
+// Helper function to convert a 64-bit integer to network byte order.
 // uint64_t htonll_helper(uint64_t value) {
 //     // separate the 64-bit integer into two 32-bit halves.
 //     uint32_t high_part htonl((uint32_t)(value >> 32));
@@ -87,6 +88,29 @@ void send_message(int sockfd, uint8_t msg_type, uint8_t flags, const char *paylo
     free(buffer);
 }
 
+/**
+ * send_encoded_message: Sends a encoded message to the socket 'sockfd' connection.
+ * 
+ * @param sockfd: The open socket connection to send the message.
+ * @param msg_type: The message type to be send in the buffer.
+ * @param flags: The flags to be included in the buffer.
+ * @param payload: The message payload
+ */
+void send_encoded_message(int sockfd, uint8_t msg_type, uint8_t flags, const char *payload) {
+    printf("send_encoded_message start");
+    uint8_t *encoded_message = NULL;
+    size_t encoded_length = 0;
+
+    // Encode the message using the custom protocol
+    if (encode_message(msg_type, flags, payload, &encoded_message, &encoded_length)) {
+        fprintf(stderr, "Failed to encode message.\n");
+        return;
+    }
+    printf("The message was encoded successfully");
+
+    free(encoded_message);
+}
+
 int main() {
     int sock_fd;
     struct sockaddr_in server_addr;
@@ -148,7 +172,8 @@ int main() {
             printf("Error reading input.\n");
         }
 
-        send_message(sock_fd, msg_type, flags, input);
+        // send_message(sock_fd, msg_type, flags, input);
+        send_encoded_message(sock_fd, msg_type, flags, input);
     }
 
 
